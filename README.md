@@ -78,8 +78,10 @@ mvn clean package
 ---
 
 ## Screenshots
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/ce417c8f-6edd-4713-8c37-fa171d289848" />
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/5432d9c1-8143-457e-bcfd-8d3d8a00c101" />
 
-> Add screenshots here after running the application.
+
 
 ---
 
