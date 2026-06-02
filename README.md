@@ -167,4 +167,5 @@ producer-consumer-fx/
 
 ## Author
 
-Created as a mini-project for the Operating Systems course.
+Dr Moataz Samy,
+Hossam Ahmed
