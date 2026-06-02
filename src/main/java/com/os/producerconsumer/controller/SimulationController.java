@@ -8,6 +8,7 @@ import com.os.producerconsumer.service.SimulationService;
 import com.os.producerconsumer.util.UiLogger;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -43,8 +44,8 @@ public class SimulationController {
     private Button resetButton;
 
     // Buffer visualization
-    private HBox bufferDisplay;
-    private final int BUFFER_BOX_SIZE = 60;
+    private FlowPane bufferDisplay;
+    private static final int BUFFER_BOX_SIZE = 68;
 
     // Status labels
     private VBox producerStatusPanel;
@@ -72,9 +73,10 @@ public class SimulationController {
      * Builds the complete UI layout.
      */
     public VBox createLayout() {
-        VBox root = new VBox(15);
-        root.setPadding(new Insets(20));
-        root.setStyle("-fx-background-color: #f4f4f4;");
+        VBox root = new VBox(18);
+        root.setPadding(new Insets(24));
+        root.setFillWidth(true);
+        root.setStyle("-fx-background-color: linear-gradient(to bottom, #f3f7fb, #e7eef6);");
 
         root.getChildren().addAll(
                 createHeader(),
@@ -93,20 +95,19 @@ public class SimulationController {
      */
     private VBox createHeader() {
         VBox header = new VBox(5);
-        header.setAlignment(Pos.CENTER);
-        header.setPadding(new Insets(10, 0, 15, 0));
+        header.setAlignment(Pos.CENTER_LEFT);
+        header.setPadding(new Insets(4, 0, 10, 0));
 
         Label title = new Label("Producer-Consumer Simulation");
-        title.setFont(Font.font("System", FontWeight.BOLD, 24));
-        title.setStyle("-fx-text-fill: #2c3e50;");
+        title.setFont(Font.font("System", FontWeight.BOLD, 30));
+        title.setStyle("-fx-text-fill: #16324f;");
 
         Label subtitle = new Label("Operating Systems Synchronization Problem");
-        subtitle.setFont(Font.font("System", FontWeight.NORMAL, 14));
-        subtitle.setStyle("-fx-text-fill: #7f8c8d;");
+        subtitle.setFont(Font.font("System", FontWeight.NORMAL, 15));
+        subtitle.setStyle("-fx-text-fill: #5f7285;");
 
-        // Decorative line
         Separator separator = new Separator();
-        separator.setStyle("-fx-background-color: #3498db;");
+        separator.setStyle("-fx-background-color: #4b7bec;");
 
         header.getChildren().addAll(title, subtitle, separator);
         return header;
@@ -117,12 +118,12 @@ public class SimulationController {
      */
     private VBox createConfigPanel() {
         VBox panel = new VBox(10);
-        panel.setStyle("-fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-background-radius: 5;");
-        panel.setPadding(new Insets(15));
+        panel.setStyle(createCardStyle());
+        panel.setPadding(new Insets(18));
 
         Label sectionTitle = new Label("Configuration");
         sectionTitle.setFont(Font.font("System", FontWeight.BOLD, 16));
-        sectionTitle.setStyle("-fx-text-fill: #2c3e50;");
+        sectionTitle.setStyle("-fx-text-fill: #16324f;");
 
         // Input grid
         GridField[] fields = new GridField[]{
@@ -136,19 +137,16 @@ public class SimulationController {
 
         GridPane inputGrid = new GridPane();
         inputGrid.setHgap(15);
-        inputGrid.setVgap(8);
+        inputGrid.setVgap(12);
         inputGrid.setPadding(new Insets(5, 0, 10, 0));
+        inputGrid.setMaxWidth(Double.MAX_VALUE);
 
-        // Column constraints for even spacing
-        ColumnConstraints col1 = new ColumnConstraints();
-        col1.setPercentWidth(25);
-        ColumnConstraints col2 = new ColumnConstraints();
-        col2.setPercentWidth(25);
-        ColumnConstraints col3 = new ColumnConstraints();
-        col3.setPercentWidth(25);
-        ColumnConstraints col4 = new ColumnConstraints();
-        col4.setPercentWidth(25);
-        inputGrid.getColumnConstraints().addAll(col1, col2, col3, col4);
+        for (int i = 0; i < 3; i++) {
+            ColumnConstraints constraints = new ColumnConstraints();
+            constraints.setPercentWidth(33.33);
+            constraints.setHgrow(Priority.ALWAYS);
+            inputGrid.getColumnConstraints().add(constraints);
+        }
 
         bufferSizeField = new TextField(fields[0].defaultValue);
         producerCountField = new TextField(fields[1].defaultValue);
@@ -192,12 +190,15 @@ public class SimulationController {
     }
 
     private VBox createLabeledField(String labelText, TextField field) {
-        VBox vb = new VBox(3);
+        VBox vb = new VBox(5);
+        vb.setFillWidth(true);
+        VBox.setVgrow(vb, Priority.NEVER);
         Label lbl = new Label(labelText);
         lbl.setFont(Font.font("System", FontWeight.MEDIUM, 11));
         lbl.setStyle("-fx-text-fill: #555;");
-        field.setMaxWidth(140);
-        field.setStyle("-fx-padding: 6; -fx-border-color: #ccc; -fx-border-radius: 3;");
+        field.setMaxWidth(Double.MAX_VALUE);
+        field.setPrefWidth(220);
+        field.setStyle("-fx-padding: 8 10; -fx-border-color: #ccd6e0; -fx-border-radius: 6; -fx-background-radius: 6; -fx-background-color: #fbfdff;");
         vb.getChildren().addAll(lbl, field);
         return vb;
     }
@@ -207,67 +208,74 @@ public class SimulationController {
      */
     private VBox createBufferSection() {
         VBox section = new VBox(10);
-        section.setStyle("-fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-background-radius: 5;");
-        section.setPadding(new Insets(15));
+        section.setStyle(createCardStyle());
+        section.setPadding(new Insets(18));
 
         Label sectionTitle = new Label("Buffer Visualization");
         sectionTitle.setFont(Font.font("System", FontWeight.BOLD, 16));
-        sectionTitle.setStyle("-fx-text-fill: #2c3e50;");
+        sectionTitle.setStyle("-fx-text-fill: #16324f;");
 
-        bufferDisplay = new HBox(8);
+        Label helperText = new Label("Slots automatically wrap so every buffer item remains visible as the window size changes.");
+        helperText.setStyle("-fx-text-fill: #5f7285; -fx-font-size: 11;");
+
+        bufferDisplay = new FlowPane(Orientation.HORIZONTAL, 10, 10);
         bufferDisplay.setAlignment(Pos.CENTER_LEFT);
-        bufferDisplay.setMinHeight(BUFFER_BOX_SIZE + 20);
+        bufferDisplay.setRowValignment(javafx.geometry.VPos.CENTER);
+        bufferDisplay.setPrefWrapLength(900);
+        bufferDisplay.setMinHeight(BUFFER_BOX_SIZE + 24);
+        bufferDisplay.prefWrapLengthProperty().bind(section.widthProperty().subtract(36));
 
-        // Scroll pane for buffer if it gets large
         ScrollPane scrollPane = new ScrollPane(bufferDisplay);
+        scrollPane.setFitToWidth(true);
         scrollPane.setFitToHeight(true);
-        scrollPane.setPrefHeight(100);
-        scrollPane.setStyle("-fx-background: white; -fx-border-color: transparent;");
+        scrollPane.setPrefHeight(170);
+        scrollPane.setMinHeight(130);
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent; -fx-border-color: transparent;");
 
-        section.getChildren().addAll(sectionTitle, scrollPane);
+        section.getChildren().addAll(sectionTitle, helperText, scrollPane);
         return section;
     }
 
     /**
      * 4 & 5. Producer and Consumer Status Sections (side by side).
      */
-    private HBox createStatusSections() {
-        HBox container = new HBox(15);
+    private FlowPane createStatusSections() {
+        FlowPane container = new FlowPane(15, 15);
+        container.setPrefWrapLength(900);
 
-        // Producer Status Panel
         VBox producerSection = new VBox(10);
-        producerSection.setStyle("-fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-background-radius: 5;");
-        producerSection.setPadding(new Insets(15));
-        producerSection.setPrefWidth(400);
+        producerSection.setStyle(createCardStyle());
+        producerSection.setPadding(new Insets(18));
+        producerSection.setPrefWidth(460);
+        producerSection.setMinWidth(320);
 
         Label producerTitle = new Label("Producer Status");
         producerTitle.setFont(Font.font("System", FontWeight.BOLD, 16));
-        producerTitle.setStyle("-fx-text-fill: #2c3e50;");
+        producerTitle.setStyle("-fx-text-fill: #16324f;");
 
         producerStatusPanel = new VBox(5);
         producerStatusPanel.setPadding(new Insets(5, 0, 0, 0));
+        VBox.setVgrow(producerStatusPanel, Priority.ALWAYS);
 
         producerSection.getChildren().addAll(producerTitle, producerStatusPanel);
 
-        // Consumer Status Panel
         VBox consumerSection = new VBox(10);
-        consumerSection.setStyle("-fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-background-radius: 5;");
-        consumerSection.setPadding(new Insets(15));
-        consumerSection.setPrefWidth(400);
+        consumerSection.setStyle(createCardStyle());
+        consumerSection.setPadding(new Insets(18));
+        consumerSection.setPrefWidth(460);
+        consumerSection.setMinWidth(320);
 
         Label consumerTitle = new Label("Consumer Status");
         consumerTitle.setFont(Font.font("System", FontWeight.BOLD, 16));
-        consumerTitle.setStyle("-fx-text-fill: #2c3e50;");
+        consumerTitle.setStyle("-fx-text-fill: #16324f;");
 
         consumerStatusPanel = new VBox(5);
         consumerStatusPanel.setPadding(new Insets(5, 0, 0, 0));
+        VBox.setVgrow(consumerStatusPanel, Priority.ALWAYS);
 
         consumerSection.getChildren().addAll(consumerTitle, consumerStatusPanel);
 
         container.getChildren().addAll(producerSection, consumerSection);
-        HBox.setHgrow(producerSection, Priority.ALWAYS);
-        HBox.setHgrow(consumerSection, Priority.ALWAYS);
-
         return container;
     }
 
@@ -276,16 +284,15 @@ public class SimulationController {
      */
     private VBox createStatsPanel() {
         VBox section = new VBox(10);
-        section.setStyle("-fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-background-radius: 5;");
-        section.setPadding(new Insets(15));
+        section.setStyle(createCardStyle());
+        section.setPadding(new Insets(18));
 
         Label sectionTitle = new Label("Statistics");
         sectionTitle.setFont(Font.font("System", FontWeight.BOLD, 16));
-        sectionTitle.setStyle("-fx-text-fill: #2c3e50;");
+        sectionTitle.setStyle("-fx-text-fill: #16324f;");
 
-        GridPane statsGrid = new GridPane();
-        statsGrid.setHgap(30);
-        statsGrid.setVgap(8);
+        FlowPane statsGrid = new FlowPane(Orientation.HORIZONTAL, 14, 14);
+        statsGrid.setPrefWrapLength(900);
         statsGrid.setPadding(new Insets(5, 0, 0, 0));
 
         totalProducedLabel = createStatLabel("0");
@@ -295,26 +302,33 @@ public class SimulationController {
         consumerWaitLabel = createStatLabel("0");
         simulationStatusLabel = createStatLabel("Stopped");
 
-        statsGrid.add(createStatEntry("Total Produced:", totalProducedLabel), 0, 0);
-        statsGrid.add(createStatEntry("Total Consumed:", totalConsumedLabel), 1, 0);
-        statsGrid.add(createStatEntry("Current Buffer Size:", currentBufferSizeLabel), 2, 0);
-
-        statsGrid.add(createStatEntry("Producer Wait Count:", producerWaitLabel), 0, 1);
-        statsGrid.add(createStatEntry("Consumer Wait Count:", consumerWaitLabel), 1, 1);
-        statsGrid.add(createStatEntry("Simulation Status:", simulationStatusLabel), 2, 1);
+        statsGrid.getChildren().addAll(
+                createStatEntry("Total Produced", totalProducedLabel),
+                createStatEntry("Total Consumed", totalConsumedLabel),
+                createStatEntry("Current Buffer Size", currentBufferSizeLabel),
+                createStatEntry("Producer Wait Count", producerWaitLabel),
+                createStatEntry("Consumer Wait Count", consumerWaitLabel),
+                createStatEntry("Simulation Status", simulationStatusLabel)
+        );
 
         section.getChildren().addAll(sectionTitle, statsGrid);
         return section;
     }
 
-    private HBox createStatEntry(String name, Label value) {
-        HBox hb = new HBox(5);
+    private VBox createStatEntry(String name, Label value) {
+        VBox card = new VBox(6);
+        card.setPrefWidth(200);
+        card.setMinWidth(180);
+        card.setPadding(new Insets(12));
+        card.setStyle("-fx-background-color: #f7faff; -fx-background-radius: 10; -fx-border-color: #d6e2ef; -fx-border-radius: 10;");
+
         Label nameLabel = new Label(name);
         nameLabel.setFont(Font.font("System", FontWeight.MEDIUM, 12));
-        nameLabel.setStyle("-fx-text-fill: #555;");
-        value.setFont(Font.font("System", FontWeight.BOLD, 12));
-        hb.getChildren().addAll(nameLabel, value);
-        return hb;
+        nameLabel.setStyle("-fx-text-fill: #5f7285;");
+        value.setFont(Font.font("System", FontWeight.BOLD, 18));
+
+        card.getChildren().addAll(nameLabel, value);
+        return card;
     }
 
     private Label createStatLabel(String text) {
@@ -328,17 +342,17 @@ public class SimulationController {
      */
     private VBox createLogSection() {
         VBox section = new VBox(10);
-        section.setStyle("-fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-background-radius: 5;");
-        section.setPadding(new Insets(15));
+        section.setStyle(createCardStyle());
+        section.setPadding(new Insets(18));
         VBox.setVgrow(section, Priority.ALWAYS);
 
         Label sectionTitle = new Label("Event Logs");
         sectionTitle.setFont(Font.font("System", FontWeight.BOLD, 16));
-        sectionTitle.setStyle("-fx-text-fill: #2c3e50;");
+        sectionTitle.setStyle("-fx-text-fill: #16324f;");
 
         logArea = new TextArea();
         logArea.setEditable(false);
-        logArea.setPrefHeight(200);
+        logArea.setPrefHeight(220);
         logArea.setStyle("-fx-font-family: 'Consolas', 'Monaco', monospace; -fx-font-size: 11; -fx-control-inner-background: #1e1e1e; -fx-text-fill: #d4d4d4;");
         VBox.setVgrow(logArea, Priority.ALWAYS);
 
@@ -441,9 +455,9 @@ public class SimulationController {
             slot.setAlignment(Pos.CENTER);
             slot.setPrefSize(BUFFER_BOX_SIZE, BUFFER_BOX_SIZE);
             slot.setMinSize(BUFFER_BOX_SIZE, BUFFER_BOX_SIZE);
+            slot.setSpacing(2);
 
             if (i < snapshot.length && snapshot[i] != null) {
-                // Filled slot
                 int itemId = snapshot[i].getId();
                 Label idLabel = new Label(String.valueOf(itemId));
                 idLabel.setFont(Font.font("System", FontWeight.BOLD, 16));
@@ -454,9 +468,8 @@ public class SimulationController {
                 slotLabel.setTextFill(Color.rgb(255, 255, 255, 0.7));
 
                 slot.getChildren().addAll(idLabel, slotLabel);
-                slot.setStyle("-fx-background-color: #3498db; -fx-border-color: #2980b9; -fx-border-width: 2; -fx-border-radius: 4; -fx-background-radius: 4;");
+                slot.setStyle("-fx-background-color: linear-gradient(to bottom, #4b7bec, #3867d6); -fx-border-color: #274baf; -fx-border-width: 2; -fx-border-radius: 8; -fx-background-radius: 8;");
             } else {
-                // Empty slot
                 Label emptyLabel = new Label("empty");
                 emptyLabel.setFont(Font.font("System", FontWeight.LIGHT, 11));
                 emptyLabel.setTextFill(Color.rgb(150, 150, 150));
@@ -466,7 +479,7 @@ public class SimulationController {
                 slotLabel.setTextFill(Color.rgb(200, 200, 200));
 
                 slot.getChildren().addAll(emptyLabel, slotLabel);
-                slot.setStyle("-fx-background-color: #ecf0f1; -fx-border-color: #bdc3c7; -fx-border-width: 2; -fx-border-radius: 4; -fx-background-radius: 4; -fx-border-style: dashed;");
+                slot.setStyle("-fx-background-color: #f8fbff; -fx-border-color: #bfd1e2; -fx-border-width: 2; -fx-border-radius: 8; -fx-background-radius: 8; -fx-border-style: segments(5, 5);");
             }
 
             bufferDisplay.getChildren().add(slot);
@@ -510,7 +523,8 @@ public class SimulationController {
     private HBox createStatusRow(String name, String status) {
         HBox row = new HBox(10);
         row.setAlignment(Pos.CENTER_LEFT);
-        row.setPadding(new Insets(3, 0, 3, 0));
+        row.setPadding(new Insets(8, 10, 8, 10));
+        row.setStyle("-fx-background-color: #f7faff; -fx-background-radius: 8; -fx-border-color: #d6e2ef; -fx-border-radius: 8;");
 
         // Status indicator circle
         Label indicator = new Label();
@@ -521,11 +535,12 @@ public class SimulationController {
         Label nameLabel = new Label(name);
         nameLabel.setFont(Font.font("System", FontWeight.MEDIUM, 12));
         nameLabel.setStyle("-fx-text-fill: #2c3e50;");
-        nameLabel.setPrefWidth(100);
+        nameLabel.setPrefWidth(110);
 
         Label statusLabel = new Label(status);
         statusLabel.setFont(Font.font("System", FontWeight.NORMAL, 12));
         statusLabel.setStyle("-fx-text-fill: #555;");
+        HBox.setHgrow(statusLabel, Priority.ALWAYS);
 
         row.getChildren().addAll(indicator, nameLabel, statusLabel);
         return row;
@@ -549,6 +564,13 @@ public class SimulationController {
             default:
                 return "-fx-background-color: #95a5a6; -fx-background-radius: 50%;";
         }
+    }
+
+    private String createCardStyle() {
+        return "-fx-background-color: rgba(255, 255, 255, 0.96); "
+                + "-fx-border-color: #d6e2ef; "
+                + "-fx-border-radius: 12; "
+                + "-fx-background-radius: 12;";
     }
 
     /**
